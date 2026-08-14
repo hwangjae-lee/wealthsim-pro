@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark" data-theme="dark-blue">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <!-- SEO & 메타 정보 -->
+  <title>WealthSim Pro - 복리 자산 시뮬레이터 & ETF 수수료 비교기</title>
+  <meta name="description" content="초기 자산, 월 적립액, 기대 수익률을 기반으로 5년~30년 자산 성장 궤적과 목표 도달 시간을 계산하고, S&P 500 및 나스닥 100 ETF의 실질 총비용(TER)을 실시간 비교해보세요." />
+  <meta name="keywords" content="복리계산기, 자산시뮬레이터, ETF수수료비교, S&P500, 나스닥100, ISA계좌, 재테크, 은퇴계산기" />
+  <meta name="author" content="WealthSim Pro" />
+
+  <!-- 1. Open Graph (카카오톡, SNS 링크 공유 미리보기 카드) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="WealthSim Pro - 2030 복리 자산 계산기 & ETF 수수료 실시간 비교" />
+  <meta property="og:description" content="내가 모은 시드머니, 목표 금액까지 얼마나 걸릴까? 실시간 복리 시뮬레이션 & ETF 실질 총비용 비교기" />
+  <meta property="og:image" content="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80" />
+  <meta property="og:url" content="https://wealthsim-pro.vercel.app" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- 2. 파비콘 (Favicon - 다이아몬드 아이콘) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💎</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💎</text></svg>">
+
+  <!-- 3. 구글 애널리틱스 4 (GA4) 연동 영역 (필요 시 G-XXXXXXXXXX 측정 ID 입력) -->
+  <!-- 
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX');
+  </script>
+  -->
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = { darkMode: 'class' };
+  </script>
+  <style>
+    body { font-family: 'Pretendard', sans-serif; transition: background-color 0.3s, color 0.3s; }
+    
+    :root[data-theme="dark-blue"] {
+      --bg-main: #020617;
+      --bg-card: rgba(15, 23, 42, 0.85);
+      --bg-input: #020617;
+      --border-color: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+    }
+    :root[data-theme="light"] {
+      --bg-main: #f8fafc;
+      --bg-card: rgba(255, 255, 255, 0.95);
+      --bg-input: #ffffff;
+      --border-color: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent: #2563eb;
+    }
+    :root[data-theme="emerald"] {
+      --bg-main: #051b14;
+      --bg-card: rgba(6, 44, 34, 0.85);
+      --bg-input: #04140f;
+      --border-color: #0d4a38;
+      --text-main: #f0fdf4;
+      --text-muted: #86efac;
+      --accent: #10b981;
+    }
+    :root[data-theme="gold"] {
+      --bg-main: #0f141c;
+      --bg-card: rgba(26, 32, 44, 0.85);
+      --bg-input: #090d14;
+      --border-color: #3b4252;
+      --text-main: #fefce8;
+      --text-muted: #d4d4d8;
+      --accent: #f59e0b;
+    }
+
+    body { background-color: var(--bg-main); color: var(--text-main); }
+    .theme-card { background-color: var(--bg-card); border-color: var(--border-color); }
+    .theme-input { background-color: var(--bg-input); border-color: var(--border-color); color: var(--text-main); }
+    input[type=range] { accent-color: var(--accent); }
+    .tab-active { background-color: #2563eb !important; color: #ffffff !important; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+
+    /* 토스트 알림 애니메이션 */
+    #toast {
+      visibility: hidden;
+      opacity: 0;
+      transition: visibility 0s 0.2s, opacity 0.2s linear;
+    }
+    #toast.show {
+      visibility: visible;
+      opacity: 1;
+      transition: opacity 0.2s linear;
+    }
+  </style>
+</head>
+<body class="min-h-screen py-6 px-4 sm:px-6 lg:px-8 transition-colors duration-300 relative">
+  <div class="max-w-6xl mx-auto space-y-6">
+
+    <!-- 🎛️ 상단 통합 네비게이션 (원클릭 SPA 화면 전환 & 테마 스위치) -->
+    <div class="flex flex-wrap items-center justify-between gap-4 py-2 border-b border-slate-800/40">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 cursor-pointer" onclick="switchView('simulator')">
+          <span class="text-xl">💎</span>
+          <span class="font-extrabold tracking-tight text-base sm:text-lg">WealthSim Pro</span>
+        </div>
+        
+        <!-- 실시간 화면 전환 탭 -->
+        <nav class="flex items-center gap-1.5 p-1 rounded-xl bg-slate-900/80 border border-slate-800">
+          <button onclick="switchView('simulator')" id="nav-simulator" class="tab-active px-3 py-1 text-xs font-bold rounded-lg transition flex items-center gap-1.5">
+            <span>📈</span> 자산 복리 시뮬레이터
+          </button>
+          <button onclick="switchView('fee')" id="nav-fee" class="px-3 py-1 text-xs font-medium text-slate-400 hover:text-white rounded-lg transition flex items-center gap-1.5">
+            <span>📊</span> ETF 실질 수수료 비교기
+          </button>
+        </nav>
+      </div>
+      
+      <!-- 컬러 테마 선택 -->
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-semibold text-slate-400">🎨 테마:</span>
+        <div class="inline-flex rounded-lg p-1 bg-slate-900/60 border border-slate-800">
+          <button onclick="setTheme('dark-blue')" class="theme-btn px-2.5 py-1 text-xs rounded-md font-medium transition bg-blue-600 text-white" data-target="dark-blue">🌙 미드나잇</button>
+          <button onclick="setTheme('light')" class="theme-btn px-2.5 py-1 text-xs rounded-md font-medium transition text-slate-400 hover:text-white" data-target="light">☀️ 라이트</button>
+          <button onclick="setTheme('emerald')" class="theme-btn px-2.5 py-1 text-xs rounded-md font-medium transition text-slate-400 hover:text-white" data-target="emerald">🌲 에메랄드</button>
+          <button onclick="setTheme('gold')" class="theme-btn px-2.5 py-1 text-xs rounded-md font-medium transition text-slate-400 hover:text-white" data-target="gold">👑 로열골드</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 📢 상단 애드센스 광고 영역 -->
+    <div class="theme-card border border-dashed rounded-xl p-3 text-center">
+      <span class="text-[11px] font-mono uppercase text-slate-500 block mb-1">Sponsored Advertisement</span>
+      <div class="h-16 flex items-center justify-center bg-slate-950/40 rounded-lg text-slate-400 text-xs">
+        📈 [구글 애드센스 상단 가로형 배너 영역 (Responsive Display Ad)]
+      </div>
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- 1️⃣ 뷰 A: 자산 복리 시뮬레이터 (Simulator View) -->
+    <!-- ============================================================= -->
+    <div id="view-simulator" class="space-y-6">
+      
+      <!-- 시뮬레이터 타이틀 헤더 -->
+      <header class="text-center space-y-2 pt-2">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold">
+          🚀 Interactive Wealth Planner
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight">
+          복리 자산 시뮬레이터 & 목표 달성 계산기
+        </h1>
+        <p class="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto">
+          초기 자산, 월 적립액, 기대 수익률, 목표 금액을 입력하고 슬라이더를 조절하여 목표 달성 시점과 자산 성장 그래프를 실시간으로 확인해보세요.
+        </p>
+      </header>
+
+      <!-- 시뮬레이터 대시보드 그리드 -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- 좌측 입력 패널 (컨트롤러) -->
+        <div class="lg:col-span-5 theme-card border rounded-2xl p-6 shadow-xl backdrop-blur space-y-5">
+          <h2 class="text-lg font-bold flex items-center gap-2 border-b border-slate-800/40 pb-3">
+            <span>⚙️</span> 시뮬레이션 매개변수 설정
+          </h2>
+
+          <!-- 1. 초기 자산 -->
+          <div class="space-y-2">
+            <div class="flex justify-between items-center text-sm">
+              <label for="initialCapitalInput" class="font-medium">초기 투자 자산</label>
+              <span id="initialCapitalDisplay" class="font-bold text-blue-400 font-mono">5,000,000 원</span>
+            </div>
+            <input type="number" id="initialCapitalInput" class="w-full theme-input border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" value="5000000" step="100000" />
+            <input type="range" id="initialCapitalSlider" min="0" max="100000000" step="500000" value="5000000" class="w-full cursor-pointer" />
+          </div>
+
+          <!-- 2. 월 적립액 -->
+          <div class="space-y-2">
+            <div class="flex justify-between items-center text-sm">
+              <label for="monthlySavingsInput" class="font-medium">매월 추가 적립액</label>
+              <span id="monthlySavingsDisplay" class="font-bold text-blue-400 font-mono">300,000 원</span>
+            </div>
+            <input type="number" id="monthlySavingsInput" class="w-full theme-input border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition" value="300000" step="50000" />
+            <input type="range" id="monthlySavingsSlider" min="0" max="5000000" step="50000" value="300000" class="w-full cursor-pointer" />
+          </div>
+
+          <!-- 3. 연평균 예상 수익률 -->
+          <div class="space-y-2">
+            <div class="flex justify-between items-center text-sm">
+              <label for="annualReturnInput" class="font-medium">연평균 예상 수익률 (%)</label>
+              <span id="annualReturnDisplay" class="font-bold text-emerald-400 font-mono">10.0 %</span>
+            </div>
+            <input type="number" id="annualReturnInput" class="w-full theme-input border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition" value="10.0" step="0.5" min="0" max="100" />
+            <input type="range" id="annualReturnSlider" min="1" max="30" step="0.5" value="10" class="w-full cursor-pointer" />
+          </div>
+
+          <!-- 4. 목표 금액 -->
+          <div class="space-y-2 pt-2 border-t border-slate-800/40">
+            <div class="flex justify-between items-center text-sm">
+              <label for="targetGoalInput" class="font-medium text-amber-400">🎯 목표 달성 금액</label>
+              <span id="targetGoalDisplay" class="font-bold text-amber-400 font-mono">600,000,000 원</span>
+            </div>
+            <input type="number" id="targetGoalInput" class="w-full theme-input border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition" value="600000000" step="10000000" />
+            <input type="range" id="targetGoalSlider" min="10000000" max="2000000000" step="10000000" value="600000000" class="w-full cursor-pointer" />
+          </div>
+
+          <!-- 5. 시뮬레이션 기간 -->
+          <div class="space-y-2">
+            <div class="flex justify-between items-center text-sm">
+              <label for="simYearsSlider" class="font-medium">그래프 표시 기간 (연)</label>
+              <span id="simYearsDisplay" class="font-bold font-mono">10년</span>
+            </div>
+            <input type="range" id="simYearsSlider" min="3" max="30" step="1" value="10" class="w-full cursor-pointer" />
+          </div>
+
+          <!-- 💰 ISA 절세 안내 박스 -->
+          <div class="theme-card border rounded-xl p-4 text-xs space-y-2">
+            <div class="flex items-center gap-1.5 font-bold text-blue-400">
+              <span>🛡️</span> 꿀팁: 세금 0원으로 복리 굴리기
+            </div>
+            <p class="text-slate-400 text-[11px] leading-relaxed">
+              일반 계좌(15.4% 배당세) 대신 <strong>ISA 비과세 계좌</strong>를 활용하면 최대 수백만 원의 세금을 아껴 복리 자산으로 재투자할 수 있습니다.
+            </p>
+            <a href="https://isa.kofia.or.kr" target="_blank" class="inline-flex items-center gap-1 text-blue-400 hover:underline font-semibold transition">
+              비과세 ISA 계좌 혜택 및 증권사 비교 ➔
+            </a>
+          </div>
+
+        </div>
+
+        <!-- 우측 차트 및 결과 카드 -->
+        <div class="lg:col-span-7 space-y-6">
+          
+          <!-- KPI 결과 카드 -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="theme-card border rounded-2xl p-4 shadow-lg backdrop-blur">
+              <div class="text-xs font-semibold text-amber-400 uppercase tracking-wider">목표 도달 소요 시간</div>
+              <div id="targetReachTime" class="text-2xl font-black text-amber-400 mt-1">계산 중...</div>
+              <div id="targetReachDate" class="text-xs text-slate-400 mt-1">도달 예상 시점</div>
+            </div>
+
+            <div class="theme-card border rounded-2xl p-4 shadow-lg backdrop-blur">
+              <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">누적 투자 원금</div>
+              <div id="totalPrincipalEnd" class="text-2xl font-black mt-1">- 원</div>
+              <div id="principalRatio" class="text-xs text-slate-400 mt-1">총 자산 대비 비중</div>
+            </div>
+
+            <div class="theme-card border rounded-2xl p-4 shadow-lg backdrop-blur">
+              <div class="text-xs font-semibold text-blue-400 uppercase tracking-wider">최종 복리 평가액</div>
+              <div id="totalAssetEnd" class="text-2xl font-black text-blue-400 mt-1">- 원</div>
+              <div id="compoundReturnEnd" class="text-xs text-emerald-400 mt-1 font-semibold">복리 수익 +0%</div>
+            </div>
+          </div>
+
+          <!-- 실시간 Chart.js 차트 -->
+          <div class="theme-card border rounded-2xl p-6 shadow-xl backdrop-blur">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="font-bold">📊 자산 성장 궤적 & 목표선</h3>
+              <span class="text-xs theme-input px-2 py-1 rounded text-slate-400">단위: 만원</span>
+            </div>
+            <div class="relative h-[300px] w-full">
+              <canvas id="growthChart"></canvas>
+            </div>
+          </div>
+
+          <!-- 🔗 제휴 마케팅 카드 (우리가 만든 비교기: ⚡ ETF 수수료 레이더) -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="theme-card border hover:border-blue-500 transition rounded-xl p-4 flex items-center justify-between">
+              <div class="space-y-1">
+                <div class="text-xs font-semibold text-blue-400">⚡ ETF 수수료 레이더</div>
+                <div class="text-sm font-bold">S&P 500 & 나스닥 100 최저비용 포착</div>
+                <div class="text-[11px] text-slate-400">표기 총보수 vs 진짜 총비용(TER) 실시간 분석</div>
+              </div>
+              <button onclick="switchView('fee'); window.scrollTo({top: 0, behavior: 'smooth'});" class="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-500 transition whitespace-nowrap">
+                비교하기
+              </button>
+            </div>
+
+            <div class="theme-card border hover:border-amber-500 transition rounded-xl p-4 flex items-center justify-between">
+              <div class="space-y-1">
+                <div class="text-xs font-semibold text-amber-400">시드머니 가속기</div>
+                <div class="text-sm font-bold">청년·군인 고금리 적금 Best 5</div>
+                <div class="text-[11px] text-slate-400">최대 연 5~6% 매칭 지원 상품</div>
+              </div>
+              <a href="https://finlife.fss.or.kr" target="_blank" class="px-3 py-1.5 rounded-lg bg-amber-600 text-white text-xs font-semibold hover:bg-amber-500 transition whitespace-nowrap">
+                확인하기
+              </a>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- 하단 연도별 상세 테이블 & 2. 결과 공유 버튼 -->
+      <div class="theme-card border rounded-2xl p-6 shadow-xl backdrop-blur space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-3">
+          <div>
+            <h3 class="font-bold text-lg">📋 연도별 상세 자산 축적 테이블</h3>
+            <p class="text-xs text-slate-400">입력된 조건에 따른 연도별 자산 시뮬레이션 상세 수치</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <!-- 2. 결과 공유 버튼 -->
+            <button onclick="shareResults()" class="text-xs px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 font-semibold transition text-white flex items-center gap-1.5 shadow-sm">
+              <span>📋</span> 계산 결과 복사
+            </button>
+            <button id="downloadCsvBtn" class="text-xs px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 font-semibold transition text-white flex items-center gap-1.5 shadow-sm">
+              <span>📥</span> CSV 다운로드
+            </button>
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="theme-input uppercase text-xs border-b border-slate-800/40 text-slate-400">
+              <tr>
+                <th class="px-4 py-3 text-center">연차</th>
+                <th class="px-4 py-3 text-right">누적 원금</th>
+                <th class="px-4 py-3 text-right">복리 평가 자산</th>
+                <th class="px-4 py-3 text-right">누적 복리 수익</th>
+                <th class="px-4 py-3 text-right">수익률</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y border-slate-800/20">
+              <!-- Dynamic Injection -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ============================================================= -->
+    <!-- 2️⃣ 뷰 B: S&P 500 & 나스닥 100 실질 수수료 비교기 (Fee View) -->
+    <!-- ============================================================= -->
+    <div id="view-fee" class="space-y-6 hidden">
+      
+      <!-- 수수료 비교기 헤더 -->
+      <header class="text-center space-y-2 pt-2">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold">
+          📊 Index Fee Intelligence
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-300 to-purple-400">
+          S&P 500 & 나스닥 100 ETF 실질 수수료 비교기
+        </h1>
+        <p class="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto">
+          표기 총보수에 속지 마세요! 기타비용과 매매중개수수료까지 포함된 <strong>'진짜 총비용(TER)'</strong>을 비교하고 내 투자금의 수수료를 실시간으로 계산해보세요.
+        </p>
+      </header>
+
+      <!-- 지수 필터 탭 -->
+      <div class="flex justify-center gap-2">
+        <button onclick="filterIndex('all')" id="btn-all" class="filter-tab px-5 py-2 rounded-xl text-sm font-bold transition bg-blue-600 text-white shadow-md">
+          전체 보기
+        </button>
+        <button onclick="filterIndex('sp500')" id="btn-sp500" class="filter-tab px-5 py-2 rounded-xl text-sm font-bold transition theme-card border text-slate-400 hover:text-white">
+          🇺🇸 S&P 500 전용
+        </button>
+        <button onclick="filterIndex('nasdaq')" id="btn-nasdaq" class="filter-tab px-5 py-2 rounded-xl text-sm font-bold transition theme-card border text-slate-400 hover:text-white">
+          🚀 나스닥 100 전용
+        </button>
+      </div>
+
+      <!-- 실질 수수료 계산기 & 비용 비교 -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- 계산기 패널 (좌측) -->
+        <div class="lg:col-span-5 theme-card border rounded-2xl p-6 shadow-xl space-y-5">
+          <h2 class="text-lg font-bold flex items-center gap-2 border-b border-slate-800/40 pb-3">
+            <span>🧮</span> 내 투자금 실질 수수료 계산기
+          </h2>
+          
+          <div class="space-y-2">
+            <div class="flex justify-between items-center text-sm">
+              <label class="font-medium">투자 원금</label>
+              <span id="calcInvestDisplay" class="font-bold text-blue-400 font-mono">10,000,000 원</span>
+            </div>
+            <input type="number" id="calcInvestInput" class="w-full theme-input border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" value="10000000" step="1000000" />
+            <input type="range" id="calcInvestSlider" min="1000000" max="200000000" step="1000000" value="10000000" class="w-full cursor-pointer" />
+          </div>
+
+          <div class="space-y-2">
+            <div class="flex justify-between items-center text-sm">
+              <label class="font-medium">투자 기간</label>
+              <span id="calcYearsDisplay" class="font-bold text-emerald-400 font-mono">5년</span>
+            </div>
+            <input type="range" id="calcYearsSlider" min="1" max="20" step="1" value="5" class="w-full cursor-pointer" />
+          </div>
+
+          <div class="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 space-y-3">
+            <div class="text-xs font-semibold text-blue-400">💡 수수료 절감 시뮬레이션 결과</div>
+            <div class="flex justify-between items-center text-sm">
+              <span class="text-slate-300">최저 실질비용 상품 선택 시</span>
+              <span id="minFeeResult" class="font-bold text-emerald-400 font-mono">- 원</span>
+            </div>
+            <div class="flex justify-between items-center text-sm">
+              <span class="text-slate-300">최고 실질비용 상품 선택 시</span>
+              <span id="maxFeeResult" class="font-bold text-rose-400 font-mono">- 원</span>
+            </div>
+            <div class="pt-2 border-t border-blue-500/20 flex justify-between items-center">
+              <span class="text-xs font-bold text-amber-300">👉 아낄 수 있는 수수료 격차</span>
+              <span id="diffFeeResult" class="text-base font-black text-amber-400 font-mono">- 원</span>
+            </div>
+          </div>
+
+          <!-- ISA 링크 -->
+          <a href="https://isa.kofia.or.kr" target="_blank" class="block theme-card border rounded-xl p-3 text-xs hover:border-blue-500 transition text-center text-blue-400 font-semibold">
+            🛡️ ISA 계좌로 투자 시 세금 0원 혜택 확인 ➔
+          </a>
+        </div>
+
+        <!-- 차트 패널 (우측) -->
+        <div class="lg:col-span-7 theme-card border rounded-2xl p-6 shadow-xl space-y-4 flex flex-col justify-between">
+          <div>
+            <h3 class="font-bold text-base">📊 주요 ETF별 실질 총비용(TER) 비교 차트</h3>
+            <p class="text-xs text-slate-400 mt-1">표기보수 + 기타비용 + 매매수수료를 합산한 연간 실제 차감 수수료율(%)</p>
+          </div>
+          <div class="relative h-[260px] w-full">
+            <canvas id="feeBarChart"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ETF 상세 수수료 비교 테이블 -->
+      <div class="theme-card border rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-2">
+          <div>
+            <h3 class="font-bold text-lg">📋 S&P 500 & 나스닥 100 ETF 실질 수수료 리스트</h3>
+            <p class="text-xs text-slate-400">금융투자협회 공시 기준 실질 총비용(Total Expense Ratio)</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="sortData('fee')" class="text-xs px-3 py-1.5 rounded-lg theme-input border hover:border-blue-500 font-semibold transition">
+              📉 최저 수수료순 정렬
+            </button>
+            <button onclick="sortData('aum')" class="text-xs px-3 py-1.5 rounded-lg theme-input border hover:border-blue-500 font-semibold transition">
+              💰 순자산(AUM)순 정렬
+            </button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="theme-input uppercase text-xs border-b border-slate-800/40 text-slate-400">
+              <tr>
+                <th class="px-4 py-3 text-left">ETF 종목명</th>
+                <th class="px-4 py-3 text-center">추종 지수</th>
+                <th class="px-4 py-3 text-center">운용사</th>
+                <th class="px-4 py-3 text-right">표기 총보수</th>
+                <th class="px-4 py-3 text-right font-bold text-blue-400">실질 총비용(연)</th>
+                <th class="px-4 py-3 text-right">순자산 규모</th>
+                <th class="px-4 py-3 text-center">배당/분배 방식</th>
+              </tr>
+            </thead>
+            <tbody id="etfTableBody" class="divide-y border-slate-800/20">
+              <!-- Dynamic Injection -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 📢 하단 구글 애드센스 배너 -->
+    <div class="theme-card border border-dashed rounded-xl p-3 text-center">
+      <span class="text-[11px] font-mono uppercase text-slate-500 block mb-1">Sponsored Advertisement</span>
+      <div class="h-20 sm:h-24 flex items-center justify-center bg-slate-950/40 rounded-lg text-slate-400 text-xs sm:text-sm">
+        📈 [구글 애드센스 하단 와이드 반응형 광고 배너 영역]
+      </div>
+    </div>
+
+    <!-- 3. 푸터 & 금융 면책 조항 (Disclaimer) & 문의 링크 (구글 애드센스 심사 통과용) -->
+    <footer class="text-center text-xs text-slate-400 py-6 border-t border-slate-800/40 space-y-3">
+      <div class="flex flex-wrap justify-center gap-4 text-xs font-semibold text-slate-300">
+        <a href="javascript:alert('본 웹사이트는 사용자의 투자 결정을 돕기 위한 보조 시뮬레이션 도구이며, 개인정보를 서버에 저장하지 않습니다.');" class="hover:underline">이용약관</a>
+        <span>•</span>
+        <a href="javascript:alert('본 사이트는 일체의 개인정보를 수집하거나 제3자에게 제공하지 않습니다.');" class="hover:underline">개인정보처리방침</a>
+        <span>•</span>
+        <a href="mailto:support@wealthsim.pro" class="hover:underline">오류 제보 및 기능 제안</a>
+      </div>
+      <p class="max-w-3xl mx-auto text-[11px] text-slate-500 leading-relaxed">
+        <strong>⚠️ 법적 면책 조항 (Disclaimer):</strong> 본 웹사이트에서 제공하는 모든 시뮬레이션 결과 및 ETF 수수료 정보는 금융투자협회 전자공시 및 수학적 복리 공식을 기반으로 한 참고용 수치입니다. 과거의 수익률이 미래의 수익을 보장하지 않으며, 모든 투자의 최종 결정과 책임은 투자자 본인에게 있습니다.
+      </p>
+      <p class="text-[11px] text-slate-600">© 2026 WealthSim Pro. All rights reserved.</p>
+    </footer>
+
+  </div>
+
+  <!-- 토스트 알림창 -->
+  <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-slate-900 border border-emerald-500 text-emerald-400 text-xs sm:text-sm font-semibold shadow-2xl flex items-center gap-2">
+    <span>✅</span> <span id="toastMsg">시뮬레이션 결과가 클립보드에 복사되었습니다!</span>
+  </div>
+
+  <!-- 통합 자바스크립트 엔진 -->
+  <script>
+    // 1. SPA 화면 전환
+    let activeView = 'simulator';
+
+    function switchView(viewName) {
+      activeView = viewName;
+      const simView = document.getElementById('view-simulator');
+      const feeView = document.getElementById('view-fee');
+      const navSim = document.getElementById('nav-simulator');
+      const navFee = document.getElementById('nav-fee');
+
+      if (viewName === 'simulator') {
+        simView.classList.remove('hidden');
+        feeView.classList.add('hidden');
+        navSim.className = 'tab-active px-3 py-1 text-xs font-bold rounded-lg transition flex items-center gap-1.5';
+        navFee.className = 'px-3 py-1 text-xs font-medium text-slate-400 hover:text-white rounded-lg transition flex items-center gap-1.5';
+        calculateAndRender();
+      } else {
+        simView.classList.add('hidden');
+        feeView.classList.remove('hidden');
+        navFee.className = 'tab-active px-3 py-1 text-xs font-bold rounded-lg transition flex items-center gap-1.5';
+        navSim.className = 'px-3 py-1 text-xs font-medium text-slate-400 hover:text-white rounded-lg transition flex items-center gap-1.5';
+        renderTable();
+        renderFeeChart();
+        updateFeeCalculator();
+      }
+    }
+
+    // 2. 컬러 테마 스위처
+    let currentTheme = 'dark-blue';
+    const themes = {
+      'dark-blue': { primary: '#3b82f6', bgChart: 'rgba(59, 130, 246, 0.15)', text: '#94a3b8', grid: 'rgba(51, 65, 85, 0.3)' },
+      'light': { primary: '#2563eb', bgChart: 'rgba(37, 99, 235, 0.12)', text: '#64748b', grid: 'rgba(226, 232, 240, 0.8)' },
+      'emerald': { primary: '#10b981', bgChart: 'rgba(16, 185, 129, 0.15)', text: '#86efac', grid: 'rgba(13, 74, 56, 0.4)' },
+      'gold': { primary: '#f59e0b', bgChart: 'rgba(245, 158, 11, 0.15)', text: '#d4d4d8', grid: 'rgba(59, 66, 82, 0.4)' }
+    };
+
+    function setTheme(themeName) {
+      currentTheme = themeName;
+      document.documentElement.setAttribute('data-theme', themeName);
+
+      document.querySelectorAll('.theme-btn').forEach(btn => {
+        if (btn.dataset.target === themeName) {
+          btn.className = 'theme-btn px-2.5 py-1 text-xs rounded-md font-bold transition bg-blue-600 text-white shadow-sm';
+        } else {
+          btn.className = 'theme-btn px-2.5 py-1 text-xs rounded-md font-medium transition text-slate-400 hover:text-white';
+        }
+      });
+
+      if (activeView === 'simulator') {
+        calculateAndRender();
+      } else {
+        renderFeeChart();
+      }
+    }
+
+    // 3. 자산 복리 시뮬레이터 로직
+    const initialInput = document.getElementById('initialCapitalInput');
+    const initialSlider = document.getElementById('initialCapitalSlider');
+    const initialDisplay = document.getElementById('initialCapitalDisplay');
+
+    const monthlyInput = document.getElementById('monthlySavingsInput');
+    const monthlySlider = document.getElementById('monthlySavingsSlider');
+    const monthlyDisplay = document.getElementById('monthlySavingsDisplay');
+
+    const returnInput = document.getElementById('annualReturnInput');
+    const returnSlider = document.getElementById('annualReturnSlider');
+    const returnDisplay = document.getElementById('annualReturnDisplay');
+
+    const targetInput = document.getElementById('targetGoalInput');
+    const targetSlider = document.getElementById('targetGoalSlider');
+    const targetDisplay = document.getElementById('targetGoalDisplay');
+
+    const yearsSlider = document.getElementById('simYearsSlider');
+    const yearsDisplay = document.getElementById('simYearsDisplay');
+
+    const targetReachTime = document.getElementById('targetReachTime');
+    const targetReachDate = document.getElementById('targetReachDate');
+    const totalPrincipalEnd = document.getElementById('totalPrincipalEnd');
+    const principalRatio = document.getElementById('principalRatio');
+    const totalAssetEnd = document.getElementById('totalAssetEnd');
+    const compoundReturnEnd = document.getElementById('compoundReturnEnd');
+    const tableBody = document.getElementById('tableBody');
+    const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+
+    let simChartInstance = null;
+
+    function formatKRW(val) {
+      return new Intl.NumberFormat('ko-KR').format(Math.round(val)) + ' 원';
+    }
+
+    function syncInputs() {
+      initialSlider.value = initialInput.value;
+      initialDisplay.innerText = formatKRW(initialInput.value);
+
+      monthlySlider.value = monthlyInput.value;
+      monthlyDisplay.innerText = formatKRW(monthlyInput.value);
+
+      returnSlider.value = returnInput.value;
+      returnDisplay.innerText = parseFloat(returnInput.value).toFixed(1) + ' %';
+
+      targetSlider.value = targetInput.value;
+      targetDisplay.innerText = formatKRW(targetInput.value);
+
+      yearsDisplay.innerText = yearsSlider.value + '년';
+
+      calculateAndRender();
+    }
+
+    function calculateAndRender() {
+      const initial = parseFloat(initialInput.value) || 0;
+      const monthly = parseFloat(monthlyInput.value) || 0;
+      const annualRate = (parseFloat(returnInput.value) || 0) / 100;
+      const monthlyRate = annualRate / 12;
+      const target = parseFloat(targetInput.value) || 0;
+      const years = parseInt(yearsSlider.value) || 10;
+
+      let currentBalance = initial;
+      let monthsToTarget = -1;
+      const maxMonths = 1200;
+
+      for (let m = 1; m <= maxMonths; m++) {
+        currentBalance = currentBalance * (1 + monthlyRate) + monthly;
+        if (currentBalance >= target) {
+          monthsToTarget = m;
+          break;
+        }
+      }
+
+      if (monthsToTarget > 0) {
+        const y = Math.floor(monthsToTarget / 12);
+        const remMonths = monthsToTarget % 12;
+        let timeStr = "";
+        if (y > 0) timeStr += `${y}년 `;
+        if (remMonths > 0) timeStr += `${remMonths}개월`;
+        targetReachTime.innerText = timeStr;
+        
+        const now = new Date();
+        const targetDate = new Date(now.getFullYear(), now.getMonth() + monthsToTarget, 1);
+        targetReachDate.innerText = `예상 도달: ${targetDate.getFullYear()}년 ${targetDate.getMonth() + 1}월`;
+      } else {
+        targetReachTime.innerText = "100년 이상";
+        targetReachDate.innerText = "수익률 또는 적립금을 높여보세요";
+      }
+
+      const labels = ['시작'];
+      const principalData = [initial / 10000];
+      const assetData = [initial / 10000];
+      const targetLineData = [target / 10000];
+
+      let runningAsset = initial;
+      let runningPrincipal = initial;
+      let tableRowsHtml = `
+        <tr class="hover:opacity-80 transition">
+          <td class="px-4 py-3 font-semibold text-center text-slate-400">시작 시점</td>
+          <td class="px-4 py-3 text-right font-mono">${formatKRW(initial)}</td>
+          <td class="px-4 py-3 text-right font-mono text-blue-400 font-bold">${formatKRW(initial)}</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-400">0 원</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-400">0.0%</td>
+        </tr>
+      `;
+
+      window.csvData = [["연차", "누적 원금(원)", "평가 자산(원)", "복리 수익(원)", "수익률(%)"]];
+      window.csvData.push(["0년차(시작)", initial, initial, 0, "0.0%"]);
+
+      for (let y = 1; y <= years; y++) {
+        labels.push(`${y}년차`);
+        targetLineData.push(target / 10000);
+
+        for (let m = 1; m <= 12; m++) {
+          runningAsset = runningAsset * (1 + monthlyRate) + monthly;
+          runningPrincipal += monthly;
+        }
+
+        const profit = runningAsset - runningPrincipal;
+        const profitRate = runningPrincipal > 0 ? (profit / runningPrincipal) * 100 : 0;
+
+        principalData.push(Math.round(runningPrincipal / 10000));
+        assetData.push(Math.round(runningAsset / 10000));
+
+        tableRowsHtml += `
+          <tr class="hover:opacity-80 transition ${runningAsset >= target ? 'font-semibold' : ''}">
+            <td class="px-4 py-3 font-semibold text-center">${y}년차 ${runningAsset >= target ? '🎯' : ''}</td>
+            <td class="px-4 py-3 text-right font-mono">${formatKRW(runningPrincipal)}</td>
+            <td class="px-4 py-3 text-right font-mono text-blue-400 font-bold">${formatKRW(runningAsset)}</td>
+            <td class="px-4 py-3 text-right font-mono text-emerald-400">+${formatKRW(profit)}</td>
+            <td class="px-4 py-3 text-right font-mono text-emerald-400 font-semibold">+${profitRate.toFixed(1)}%</td>
+          </tr>
+        `;
+
+        window.csvData.push([`${y}년차`, Math.round(runningPrincipal), Math.round(runningAsset), Math.round(profit), `${profitRate.toFixed(1)}%`]);
+      }
+
+      tableBody.innerHTML = tableRowsHtml;
+
+      totalPrincipalEnd.innerText = formatKRW(runningPrincipal);
+      const ratio = runningAsset > 0 ? ((runningPrincipal / runningAsset) * 100).toFixed(1) : 100;
+      principalRatio.innerText = `총 평가액의 ${ratio}% 수준`;
+
+      totalAssetEnd.innerText = formatKRW(runningAsset);
+      const totalProfit = runningAsset - runningPrincipal;
+      const totalProfitRate = runningPrincipal > 0 ? ((totalProfit / runningPrincipal) * 100).toFixed(1) : 0;
+      compoundReturnEnd.innerText = `복리 수익 +${formatKRW(totalProfit)} (+${totalProfitRate}%)`;
+
+      renderSimChart(labels, principalData, assetData, targetLineData);
+    }
+
+    function renderSimChart(labels, principal, asset, targetLine) {
+      const canvas = document.getElementById('growthChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const themeConfig = themes[currentTheme] || themes['dark-blue'];
+
+      if (simChartInstance) simChartInstance.destroy();
+
+      simChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: '복리 평가 자산',
+              data: asset,
+              borderColor: themeConfig.primary,
+              backgroundColor: themeConfig.bgChart,
+              fill: true,
+              borderWidth: 3,
+              tension: 0.3,
+              pointRadius: 4,
+              pointHoverRadius: 6
+            },
+            {
+              label: '누적 투자 원금',
+              data: principal,
+              borderColor: '#94a3b8',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              borderDash: [5, 5],
+              tension: 0.1,
+              pointRadius: 3
+            },
+            {
+              label: '🎯 목표 금액',
+              data: targetLine,
+              borderColor: '#f59e0b',
+              backgroundColor: 'transparent',
+              borderWidth: 2,
+              borderDash: [3, 3],
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { labels: { color: themeConfig.text, font: { family: 'Pretendard' } } },
+            tooltip: {
+              callbacks: {
+                label: ctx => ctx.dataset.label + ': ' + new Intl.NumberFormat('ko-KR').format(ctx.raw) + ' 만원'
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { color: themeConfig.text }, grid: { color: themeConfig.grid } },
+            y: {
+              ticks: {
+                color: themeConfig.text,
+                callback: val => val >= 10000 ? (val/10000).toFixed(1) + '억' : val + '만'
+              },
+              grid: { color: themeConfig.grid }
+            }
+          }
+        }
+      });
+    }
+
+    // 결과 텍스트 복사 & 공유 함수
+    function shareResults() {
+      const initial = formatKRW(initialInput.value);
+      const monthly = formatKRW(monthlyInput.value);
+      const rate = returnInput.value;
+      const target = formatKRW(targetInput.value);
+      const reachTime = targetReachTime.innerText;
+      const reachDate = targetReachDate.innerText;
+      const endYears = yearsSlider.value;
+      const finalAsset = totalAssetEnd.innerText;
+      const finalProfit = compoundReturnEnd.innerText;
+
+      const shareText = `[💎 WealthSim Pro 복리 시뮬레이션 결과]
+• 초기 자산: ${initial}
+• 월 적립액: ${monthly} (연 ${rate}%)
+• 🎯 목표 금액 (${target}) 도달 소요: ${reachTime} (${reachDate})
+• ${endYears}년 후 예상 복리 총자산: ${finalAsset} (${finalProfit})
+
+👉 나만의 복리 자산 시뮬레이션 직접 돌려보기: ${window.location.href}`;
+
+      navigator.clipboard.writeText(shareText).then(() => {
+        showToast("시뮬레이션 결과가 클립보드에 복사되었습니다!");
+      }).catch(() => {
+        showToast("복사에 실패했습니다. 브라우저 권한을 확인해주세요.");
+      });
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').innerText = msg;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    // Event Bindings
+    initialSlider.addEventListener('input', () => { initialInput.value = initialSlider.value; syncInputs(); });
+    monthlySlider.addEventListener('input', () => { monthlyInput.value = monthlySlider.value; syncInputs(); });
+    returnSlider.addEventListener('input', () => { returnInput.value = returnSlider.value; syncInputs(); });
+    targetSlider.addEventListener('input', () => { targetInput.value = targetSlider.value; syncInputs(); });
+    yearsSlider.addEventListener('input', () => { syncInputs(); });
+
+    initialInput.addEventListener('input', () => { syncInputs(); });
+    monthlyInput.addEventListener('input', () => { syncInputs(); });
+    returnInput.addEventListener('input', () => { syncInputs(); });
+    targetInput.addEventListener('input', () => { syncInputs(); });
+
+    downloadCsvBtn.addEventListener('click', () => {
+      let csvContent = "\uFEFF" + window.csvData.map(e => e.join(",")).join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "Wealth_Simulation_Plan.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    // 4. S&P 500 & 나스닥 100 수수료 비교기 로직
+    const etfData = [
+      { name: "TIGER 미국S&P500", code: "360750", index: "sp500", issuer: "미래에셋", statedFee: 0.070, realFee: 0.125, aum: "5조 2,000억", divType: "분기배당" },
+      { name: "ACE 미국S&P500", code: "360200", index: "sp500", issuer: "한국투자", statedFee: 0.070, realFee: 0.118, aum: "1조 8,500억", divType: "분기배당" },
+      { name: "KODEX 미국S&P500TR", code: "379800", index: "sp500", issuer: "삼성", statedFee: 0.009, realFee: 0.089, aum: "2조 1,000억", divType: "자동 재투자(TR)" },
+      { name: "SOL 미국S&P500", code: "433330", index: "sp500", issuer: "신한", statedFee: 0.030, realFee: 0.120, aum: "6,800억", divType: "월배당" },
+      { name: "PLUS 미국S&P500", code: "379780", index: "sp500", issuer: "한화", statedFee: 0.009, realFee: 0.092, aum: "4,200억", divType: "분기배당" },
+      { name: "VOO (미국직투)", code: "VOO", index: "sp500", issuer: "Vanguard", statedFee: 0.030, realFee: 0.030, aum: "580조 원", divType: "분기배당" },
+
+      { name: "TIGER 미국나스닥100", code: "133690", index: "nasdaq", issuer: "미래에셋", statedFee: 0.070, realFee: 0.152, aum: "3조 9,000억", divType: "분기배당" },
+      { name: "ACE 미국나스닥100", code: "367380", index: "nasdaq", issuer: "한국투자", statedFee: 0.070, realFee: 0.141, aum: "1조 2,000억", divType: "분기배당" },
+      { name: "KODEX 미국나스닥100TR", code: "379810", index: "nasdaq", issuer: "삼성", statedFee: 0.009, realFee: 0.098, aum: "1조 6,500억", divType: "자동 재투자(TR)" },
+      { name: "SOL 미국나스닥100", code: "472150", index: "nasdaq", issuer: "신한", statedFee: 0.030, realFee: 0.138, aum: "3,100억", divType: "월배당" },
+      { name: "PLUS 미국나스닥100", code: "381180", index: "nasdaq", issuer: "한화", statedFee: 0.009, realFee: 0.105, aum: "2,800억", divType: "분기배당" },
+      { name: "QQQM (미국직투)", code: "QQQM", index: "nasdaq", issuer: "Invesco", statedFee: 0.150, realFee: 0.150, aum: "42조 원", divType: "분기배당" }
+    ];
+
+    let currentIndexFilter = 'all';
+    let feeChartInstance = null;
+
+    function filterIndex(filter) {
+      currentIndexFilter = filter;
+      document.querySelectorAll('.filter-tab').forEach(b => {
+        b.className = 'filter-tab px-5 py-2 rounded-xl text-sm font-bold transition theme-card border text-slate-400 hover:text-white';
+      });
+      document.getElementById('btn-' + filter).className = 'filter-tab px-5 py-2 rounded-xl text-sm font-bold transition bg-blue-600 text-white shadow-md';
+      
+      renderTable();
+      renderFeeChart();
+      updateFeeCalculator();
+    }
+
+    function getFilteredData() {
+      if (currentIndexFilter === 'all') return etfData;
+      return etfData.filter(d => d.index === currentIndexFilter);
+    }
+
+    function renderTable() {
+      const data = getFilteredData();
+      const tbody = document.getElementById('etfTableBody');
+      if (!tbody) return;
+      
+      tbody.innerHTML = data.map(item => `
+        <tr class="hover:opacity-80 transition">
+          <td class="px-4 py-3 font-semibold text-left">
+            <div class="font-bold">${item.name}</div>
+            <div class="text-[11px] text-slate-400">${item.code}</div>
+          </td>
+          <td class="px-4 py-3 text-center">
+            <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${item.index === 'sp500' ? 'bg-indigo-500/20 text-indigo-300' : 'bg-purple-500/20 text-purple-300'}">
+              ${item.index === 'sp500' ? 'S&P 500' : '나스닥 100'}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-center text-slate-300">${item.issuer}</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-400">${item.statedFee.toFixed(3)}%</td>
+          <td class="px-4 py-3 text-right font-mono font-bold text-blue-400 text-base">${item.realFee.toFixed(3)}%</td>
+          <td class="px-4 py-3 text-right font-mono text-slate-300">${item.aum}</td>
+          <td class="px-4 py-3 text-center text-xs text-slate-400">${item.divType}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderFeeChart() {
+      const canvas = document.getElementById('feeBarChart');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const data = getFilteredData();
+      const themeConfig = themes[currentTheme] || themes['dark-blue'];
+
+      if (feeChartInstance) feeChartInstance.destroy();
+
+      feeChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: data.map(d => d.name.replace("미국", "")),
+          datasets: [
+            {
+              label: '실질 총비용(TER) %',
+              data: data.map(d => d.realFee),
+              backgroundColor: themeConfig.bgChart,
+              borderColor: themeConfig.primary,
+              borderWidth: 2,
+              borderRadius: 6
+            },
+            {
+              label: '표기 총보수 %',
+              data: data.map(d => d.statedFee),
+              backgroundColor: 'rgba(148, 163, 184, 0.2)',
+              borderColor: '#64748b',
+              borderWidth: 1,
+              borderRadius: 6
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: themeConfig.text, font: { family: 'Pretendard' } } },
+            tooltip: {
+              callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.raw.toFixed(3) + '%' }
+            }
+          },
+          scales: {
+            x: { ticks: { color: themeConfig.text, font: { size: 10 } }, grid: { display: false } },
+            y: {
+              ticks: { color: themeConfig.text, callback: val => val.toFixed(2) + '%' },
+              grid: { color: themeConfig.grid }
+            }
+          }
+        }
+      });
+    }
+
+    function updateFeeCalculator() {
+      const principal = parseFloat(document.getElementById('calcInvestInput').value) || 0;
+      const years = parseInt(document.getElementById('calcYearsSlider').value) || 1;
+
+      document.getElementById('calcInvestDisplay').innerText = new Intl.NumberFormat('ko-KR').format(principal) + ' 원';
+      document.getElementById('calcYearsDisplay').innerText = years + '년';
+
+      const data = getFilteredData();
+      const realFees = data.map(d => d.realFee / 100);
+      const minRate = Math.min(...realFees);
+      const maxRate = Math.max(...realFees);
+
+      const minFee = principal * minRate * years;
+      const maxFee = principal * maxRate * years;
+      const diff = maxFee - minFee;
+
+      document.getElementById('minFeeResult').innerText = new Intl.NumberFormat('ko-KR').format(Math.round(minFee)) + ' 원';
+      document.getElementById('maxFeeResult').innerText = new Intl.NumberFormat('ko-KR').format(Math.round(maxFee)) + ' 원';
+      document.getElementById('diffFeeResult').innerText = '+' + new Intl.NumberFormat('ko-KR').format(Math.round(diff)) + ' 원 절약';
+    }
+
+    function sortData(key) {
+      if (key === 'fee') {
+        etfData.sort((a, b) => a.realFee - b.realFee);
+      } else if (key === 'aum') {
+        etfData.sort((a, b) => parseFloat(b.aum.replace(/[^0-9.]/g, '')) - parseFloat(a.aum.replace(/[^0-9.]/g, '')));
+      }
+      renderTable();
+      renderFeeChart();
+    }
+
+    const investInput = document.getElementById('calcInvestInput');
+    const investSlider = document.getElementById('calcInvestSlider');
+    const calcYearsSlider = document.getElementById('calcYearsSlider');
+
+    investInput.addEventListener('input', () => { investSlider.value = investInput.value; updateFeeCalculator(); });
+    investSlider.addEventListener('input', () => { investInput.value = investSlider.value; updateFeeCalculator(); });
+    calcYearsSlider.addEventListener('input', () => { updateFeeCalculator(); });
+
+    // Initial Start
+    setTheme('dark-blue');
+    syncInputs();
+  </script>
+</body>
+</html>
